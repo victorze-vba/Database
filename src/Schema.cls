@@ -25,40 +25,69 @@ Public Property Let sql(value As String)
 End Property
 
 Public Function FieldString(name As String, Length As Integer) As Schema
-    sql = sql & name & " VARCHAR(" & Length & ")" 'TEXT
-End Function
-
-Public Function FieldInteger(name) As Schema
-    sql = name & " INTEGER"
-    Debug.Print sql
-End Function
-
-Public Function FieldDouble(name) As Schema
+    sql = name & " VARCHAR(" & Length & ") NOT NULL"
     
+    Set FieldString = Me
+End Function
+
+Public Function FieldInteger(name As String) As Schema
+    sql = name & " INTEGER NOT NULL"
+    
+    Set FieldInteger = Me
+End Function
+
+Public Function FieldDouble(name As String) As Schema
+    sql = name & " DOUBLE NOT NULL"
+    
+    Set FieldDouble = Me
+End Function
+
+Public Function FieldDatetime(name As String) As Schema
+    sql = name & " DATETIME NOT NULL"
+    
+    Set FieldDatetime = Me
+End Function
+
+Public Function FieldTime(name As String) As Schema
+    sql = name & " TIME NOT NULL"
+    
+    Set FieldTime = Me
+End Function
+
+Public Function FieldDate(name As String) As Schema
+    sql = name & " DATE NOT NULL"
+    
+    Set FieldDate = Me
+End Function
+
+Public Function Nullable() As Schema
+    pSql = Left(pSql, Len(pSql) - 9)
+    
+    Set Nullable = Me
+End Function
+
+Public Function Default(valor) As Schema
+    pSql = pSql & " DEFAULT " & valor
+    
+    Set Default = Me
 End Function
 
 Public Function Unique() As Schema
-
-End Function
-
-Public Function NotRequired() As Schema
+    pSql = pSql & " UNIQUE"
     
-End Function
-
-Public Function Increments() As Schema
-
+    Set Unique = Me
 End Function
 
 Public Sub Create(Table As String)
     If sql = "" Then
         sql = "CREATE TABLE " & Table
     Else
-        sql = Left(sql, Len(sql) - 2)
-        sql = "CREATE TABLE " & Table & " (" & sql & ")"
+        pSql = "[id] AUTOINCREMENT PRIMARY KEY, " & pSql
+        pSql = "CREATE TABLE " & Table & " (" & sql & ")"
     End If
     
     Init
-    Debug.Print sql
+    Debug.Print pSql
     Cn.Execute sql, , adCmdText
 End Sub
 
@@ -84,6 +113,6 @@ Private Sub Class_Initialize()
 End Sub
 
 Private Sub Class_Terminate()
-
+    Debug.Print sql
 End Sub
 
