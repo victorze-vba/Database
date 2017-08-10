@@ -17,6 +17,10 @@ Private query As String
 
 Private pTable As String
 
+Private Rows As New Collection
+
+Private Row As Scripting.Dictionary
+
 Public Function Table(TableName As String) As Database
     pTable = TableName
     
@@ -35,34 +39,48 @@ Public Sub Insert(Data As Scripting.Dictionary)
 
     Fields = Right(Fields, Len(Fields) - 2)
     Values = Right(Values, Len(Values) - 2)
-    
+
     query = "INSERT INTO " & pTable & " (" & Fields & ") VALUES (" & Values & ")"
 
     cn.Execute query
 End Sub
 
-Public Function GetData() As Collection
-    Dim c As Integer
-    Dim Rows As New Collection
-    Dim Data As Scripting.Dictionary
-    
+Public Function GetAll() As Collection
     query = "SELECT * FROM " & pTable
     
+    Call GetData
+    
+    Set GetAll = Rows
+End Function
+
+'$user = DB::table('users')->where('name', 'John')->first();
+Public Function GetWhere(Condition As String) As Collection
+    query = "SELECT * FROM " & pTable & " WHERE " & Condition
+    
+    Call GetData
+    
+    Set GetWhere = Rows
+End Function
+
+Private Sub GetData()
+    Dim c As Integer
+
     rs.Open query, cn, adOpenStatic, adLockOptimistic
 
     Do While Not rs.EOF
-        Set Data = New Scripting.Dictionary
+        Set Row = New Scripting.Dictionary
 
         For c = 0 To rs.Fields.Count - 1
-            Data(rs.Fields(c).Name) = rs.Fields(c)
+            Row(rs.Fields(c).Name) = rs.Fields(c)
         Next c
         
-        Rows.Add Data
+        Rows.Add Row
+        
         rs.MoveNext
     Loop
-    
-    Set GetData = Rows
-End Function
+End Sub
+
+'$users = DB::table('users')->count();
 
 Private Function FormatValue(Value As Variant)
     If IsDate(Value) Then

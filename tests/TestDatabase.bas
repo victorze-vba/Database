@@ -12,13 +12,28 @@ Sub TestInsert()
     db.Table("Tabla").Insert Data
 End Sub
 
-Sub TestGetTable()
+Sub TestGetAll()
     Dim Row As Scripting.Dictionary
     Dim Rows As New Collection
     Dim db As New Database
     Dim k As Variant
     
-    Set Rows = db.Table("Tabla").GetData()
+    Set Rows = db.Table("Tabla").GetAll()
+    
+    For Each Row In Rows
+        For Each k In Row.Keys
+            Debug.Print k, Row(k)
+        Next k
+    Next Row
+End Sub
+
+Sub TestGetWhere()
+    Dim Row As Scripting.Dictionary
+    Dim Rows As New Collection
+    Dim db As New Database
+    Dim k As Variant
+    
+    Set Rows = db.Table("Tabla").GetWhere("id = 1")
     
     For Each Row In Rows
         For Each k In Row.Keys
