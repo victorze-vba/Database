@@ -53,9 +53,8 @@ Public Function GetAll() As Collection
     Set GetAll = Rows
 End Function
 
-'$user = DB::table('users')->where('name', 'John')->first();
-Public Function GetWhere(Condition As String) As Collection
-    query = "SELECT * FROM " & pTable & " WHERE " & Condition
+Public Function GetWhere(Criterio As String) As Collection
+    query = "SELECT * FROM " & pTable & " WHERE " & Criterio
     
     Call GetData
     
@@ -80,7 +79,39 @@ Private Sub GetData()
     Loop
 End Sub
 
-'$users = DB::table('users')->count();
+Function Delete(Criterio As String) As Byte
+    On Error Resume Next
+    query = "DELETE * FROM " & pTable & " WHERE " & Criterio
+    
+    cn.Execute query
+    Delete = 1
+End Function
+
+Sub Truncate()
+    query = "DELETE * FROM " & pTable
+    
+    cn.Execute query
+End Sub
+
+Public Function Count() As Long
+    query = "SELECT id FROM " & pTable
+    
+    rs.Open query, cn, adOpenStatic, adLockOptimistic
+
+    Count = rs.RecordCount
+End Function
+
+Public Sub PrintFields()
+    Dim c As Integer
+        
+    query = "SELECT * FROM " & pTable
+
+    rs.Open query, cn, adOpenStatic, adLockOptimistic
+
+    For c = 0 To rs.Fields.Count - 1
+        Debug.Print rs.Fields(c).Name
+    Next c
+End Sub
 
 Private Function FormatValue(Value As Variant)
     If IsDate(Value) Then
@@ -105,10 +136,7 @@ End Sub
 
 Private Sub Class_Terminate()
     Debug.Print query
-    
-    If Not rs Is Nothing Then
-        rs.Close: Set rs = Nothing
-    End If
+
     If Not cn Is Nothing Then
         cn.Close: Set cn = Nothing
     End If

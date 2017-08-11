@@ -41,3 +41,29 @@ Sub TestGetWhere()
         Next k
     Next Row
 End Sub
+
+Sub TestDelete()
+    Dim db As New Database
+    
+    db.Table("Tabla").Delete "id = 12"
+End Sub
+
+Sub TestTruncate()
+    Dim db As New Database
+    
+    db.Table("Tabla").Truncate
+End Sub
+
+Sub TestCount()
+    Dim db As New Database
+    
+    Debug.Print db.Table("Tabla").Count
+End Sub
+
+Sub TestPrintFields()
+    Dim db As New Database
+    
+    db.Table("Tabla").PrintFields
+End Sub
+
+
