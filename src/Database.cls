@@ -79,13 +79,27 @@ Private Sub GetData()
     Loop
 End Sub
 
-Function Delete(Criterio As String) As Byte
-    On Error Resume Next
+Sub Update(Data As Scripting.Dictionary, Criterio As String)
+    Dim k As Variant
+    Dim FieldsValues As String
+
+    For Each k In Data.Keys
+        FieldsValues = FieldsValues & ", " & k & " = " & FormatValue(Data(k))
+    Next k
+    
+    FieldsValues = FieldsValues & ", updated_at = NOW()"
+    FieldsValues = Right(FieldsValues, Len(FieldsValues) - 2)
+
+    query = "UPDATE " & pTable & " SET " & FieldsValues & " WHERE " & Criterio
+
+    cn.Execute query
+End Sub
+
+Sub Delete(Criterio As String)
     query = "DELETE * FROM " & pTable & " WHERE " & Criterio
     
     cn.Execute query
-    Delete = 1
-End Function
+End Sub
 
 Sub Truncate()
     query = "DELETE * FROM " & pTable
@@ -103,7 +117,7 @@ End Function
 
 Public Sub PrintFields()
     Dim c As Integer
-        
+
     query = "SELECT * FROM " & pTable
 
     rs.Open query, cn, adOpenStatic, adLockOptimistic
@@ -125,12 +139,12 @@ End Function
 
 Private Sub Class_Initialize()
     Dim sPath As String
-    
+
     Set cn = New ADODB.Connection
     Set rs = New ADODB.Recordset
-    
+
     sPath = ThisWorkbook.Path & "\db.accdb" ' path access
-    
+
     cn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & sPath & ";Jet OLEDB:Database Password=;"
 End Sub
 

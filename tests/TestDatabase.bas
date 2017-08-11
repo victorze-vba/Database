@@ -5,9 +5,9 @@ Sub TestInsert()
     Dim Data As New Scripting.Dictionary
     Dim db As New Database
     
-    Data("nombre") = "Victor Hugo Zevallos"
-    Data("edad") = 18.21
-    Data("fecha") = "15/09/2017"
+    Data("cliente") = "Marco Antonio"
+    Data("monto") = 231.22
+    Data("fecha") = "15/01/2017"
     
     db.Table("Tabla").Insert Data
 End Sub
@@ -42,6 +42,17 @@ Sub TestGetWhere()
     Next Row
 End Sub
 
+Sub TestUpdate()
+    Dim Data As New Scripting.Dictionary
+    Dim db As New Database
+    
+    Data("cliente") = "Miguel Angel Huanacuni (Kol8)"
+    Data("monto") = 15485
+    Data("fecha") = "24/12/2017"
+    
+    db.Table("Tabla").Update Data, "id = 2"
+End Sub
+
 Sub TestDelete()
     Dim db As New Database
     
@@ -65,5 +76,3 @@ Sub TestPrintFields()
     
     db.Table("Tabla").PrintFields
 End Sub
-
-
