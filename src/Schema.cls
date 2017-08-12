@@ -10,52 +10,40 @@ Attribute VB_Exposed = False
 Option Explicit
 
 Private pSql As String
-Private Cn As ADODB.Connection
+Private cn As ADODB.Connection
     
 Public Property Get sql() As String
     sql = pSql
 End Property
 
-Public Property Let sql(value As String)
+Public Property Let sql(Value As String)
     If pSql = "" Then
-        pSql = value
+        pSql = Value
     Else
-        pSql = sql & ", " & value
+        pSql = sql & ", " & Value
     End If
 End Property
 
-Public Function FieldString(name As String, Length As Integer) As Schema
-    sql = name & " VARCHAR(" & Length & ") NOT NULL"
+Public Function FieldString(Name As String, Length As Integer) As Schema
+    sql = Name & " VARCHAR(" & Length & ") NOT NULL"
     
     Set FieldString = Me
 End Function
 
-Public Function FieldInteger(name As String) As Schema
-    sql = name & " INTEGER NOT NULL"
+Public Function FieldInteger(Name As String) As Schema
+    sql = Name & " INTEGER NOT NULL"
     
     Set FieldInteger = Me
 End Function
 
-Public Function FieldDouble(name As String) As Schema
-    sql = name & " DOUBLE NOT NULL"
+Public Function FieldDouble(Name As String) As Schema
+    sql = Name & " DOUBLE NOT NULL"
     
     Set FieldDouble = Me
 End Function
 
-Public Function FieldDatetime(name As String) As Schema
-    sql = name & " DATETIME NOT NULL"
-    
-    Set FieldDatetime = Me
-End Function
-
-Public Function FieldTime(name As String) As Schema
-    sql = name & " TIME NOT NULL"
-    
-    Set FieldTime = Me
-End Function
-
-Public Function FieldDate(name As String) As Schema
-    sql = name & " DATE NOT NULL"
+Public Function FieldDate(Name As String) As Schema
+    sql = Name & " DATE NOT NULL"
     
     Set FieldDate = Me
 End Function
@@ -78,41 +66,36 @@ Public Function Unique() As Schema
     Set Unique = Me
 End Function
 
-Public Sub Create(Table As String)
-    If sql = "" Then
-        sql = "CREATE TABLE " & Table
+Public Sub Create(TableName As String, Optional TimeStamp As Boolean = True)
+    pSql = "[id] AUTOINCREMENT PRIMARY KEY, " & pSql
+
+    If TimeStamp Then
+        pSql = "CREATE TABLE " & TableName & " (" & pSql & _
+               ", created_at DATETIME DEFAULT NOW(), updated_at DATETIME DEFAULT NOW())"
     Else
-        pSql = "[id] AUTOINCREMENT PRIMARY KEY, " & pSql
-        pSql = "CREATE TABLE " & Table & " (" & sql & ")"
+        pSql = "CREATE TABLE " & TableName & " (" & pSql & ")"
     End If
-    
-    Init
-    Debug.Print pSql
-    Cn.Execute sql, , adCmdText
+
+    cn.Execute pSql, , adCmdText
 End Sub
 
 Public Sub Drop(Table As String)
-    Init
+    Call Init
     
     sql = "DROP TABLE " & Table
-    Cn.Execute sql, , adCmdText
-End Sub
-
-Public Sub Init()
-    Set Cn = New ADODB.Connection
-    Dim sPath As String
-    
-    sPath = ThisWorkbook.Path & "\db.accdb"
-    
-    Set Cn = New ADODB.Connection
-    Cn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & sPath & ";Jet OLEDB:Database Password=;"
+    cn.Execute sql, , adCmdText
 End Sub
 
 Private Sub Class_Initialize()
+    Dim sPath As String
 
+    Set cn = New ADODB.Connection
+
+    sPath = ThisWorkbook.Path & "\db.accdb"
+
+    cn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & sPath & ";Jet OLEDB:Database Password=;"
 End Sub
 
 Private Sub Class_Terminate()
-    Debug.Print sql
+    Debug.Print pSql
 End Sub
-
