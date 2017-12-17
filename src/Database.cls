@@ -53,12 +53,28 @@ Public Function GetAll() As Collection
     Set GetAll = Rows
 End Function
 
-Public Function GetWhere(Criterio As String) As Collection
-    query = "SELECT * FROM " & pTable & " WHERE " & Criterio
+Public Function GetWhere(Condition As String) As Collection
+    query = "SELECT * FROM " & pTable & " WHERE " & Condition
     
     Call GetData
     
     Set GetWhere = Rows
+End Function
+
+Public Function GetWhereId(Id As Integer) As Scripting.Dictionary
+    Dim c As Integer
+
+    query = "SELECT * FROM " & pTable & " WHERE id=" & Id
+    
+    rs.Open query, cn, adOpenStatic, adLockOptimistic
+
+    Set Row = New Scripting.Dictionary
+
+    For c = 0 To rs.Fields.Count - 1
+        Row(rs.Fields(c).Name) = rs.Fields(c)
+    Next c
+    
+    Set GetWhereId = Row
 End Function
 
 Private Sub GetData()
@@ -79,7 +95,7 @@ Private Sub GetData()
     Loop
 End Sub
 
-Sub Update(Data As Scripting.Dictionary, Criterio As String)
+Sub Update(Data As Scripting.Dictionary, Condition As String)
     Dim k As Variant
     Dim FieldsValues As String
 
@@ -90,13 +106,19 @@ Sub Update(Data As Scripting.Dictionary, Criterio As String)
     FieldsValues = FieldsValues & ", updated_at = NOW()"
     FieldsValues = Right(FieldsValues, Len(FieldsValues) - 2)
 
-    query = "UPDATE " & pTable & " SET " & FieldsValues & " WHERE " & Criterio
+    query = "UPDATE " & pTable & " SET " & FieldsValues & " WHERE " & Condition
 
     cn.Execute query
 End Sub
 
-Sub Delete(Criterio As String)
-    query = "DELETE * FROM " & pTable & " WHERE " & Criterio
+Sub Delete(Condition As String)
+    query = "DELETE * FROM " & pTable & " WHERE " & Condition
+    
+    cn.Execute query
+End Sub
+
+Sub DeleteId(Id As Integer)
+    query = "DELETE * FROM " & pTable & " WHERE id=" & Id
     
     cn.Execute query
 End Sub
@@ -155,3 +177,4 @@ Private Sub Class_Terminate()
         cn.Close: Set cn = Nothing
     End If
 End Sub
+
