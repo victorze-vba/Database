@@ -9,145 +9,202 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Private cn As ADODB.Connection
+Private TableName As String
 
-Private rs As ADODB.Recordset
+Private Query As String
 
-Private query As String
+Private ExecuteQuery As Boolean
 
-Private pTable As String
+Private FieldsStr As String
 
-Private Rows As New Collection
+Private WhereStr As String
 
-Private Row As Scripting.Dictionary
+Private OrderByStr As String
 
-Public Function Table(TableName As String) As Database
-    pTable = TableName
-    
-    Set Table = Me
+Private GroupByStr As String
+
+Private HavingStr As String
+
+Public Function SelectFields(ParamArray Fields() As Variant) As Database
+    Dim Field As Variant
+
+    For Each Field In Fields
+        FieldsStr = IIf(FieldsStr = "", Field, FieldsStr & ", " & Field)
+    Next Field
+
+    Set SelectFields = Me
 End Function
-
-Public Sub Insert(Data As Scripting.Dictionary)
-    Dim k As Variant
-    Dim Fields As String
-    Dim Values As String
-
-    For Each k In Data.Keys
-        Fields = Fields & ", " & k
-        Values = Values & ", " & FormatValue(Data(k))
-    Next k
-
-    Fields = Right(Fields, Len(Fields) - 2)
-    Values = Right(Values, Len(Values) - 2)
-
-    query = "INSERT INTO " & pTable & " (" & Fields & ") VALUES (" & Values & ")"
-
-    cn.Execute query
-End Sub
 
 Public Function GetAll() As Collection
-    query = "SELECT * FROM " & pTable
-    
-    Call GetData
-    
-    Set GetAll = Rows
+    Query = "SELECT " & GetFields & " FROM " & TableName
+
+    AddWhere
+    AddGroupBy
+    AddHaving
+    AddOrderBy
+
+    If ExecuteQuery Then Set GetAll = GetData
 End Function
 
-Public Function GetWhere(Condition As String) As Collection
-    query = "SELECT * FROM " & pTable & " WHERE " & Condition
-    
-    Call GetData
-    
-    Set GetWhere = Rows
+Public Function Where(ParamArray Chunk() As Variant) As Database
+    Dim NumberArgs As Integer
+    NumberArgs = UBound(Chunk) + 1
+
+    Select Case NumberArgs
+        Case 1:
+            WhereStr = Chunk(0)
+        Case 2:
+            WhereStr = Chunk(0) & " = " & FormatValue(Chunk(1))
+        Case 3:
+            WhereStr = Chunk(0) & " " & Chunk(1) & " " & FormatValue(Chunk(2))
+    End Select
+
+    Set Where = Me
 End Function
 
-Public Function GetWhereId(Id As Integer) As Scripting.Dictionary
-    Dim c As Integer
+Private Sub AddWhere()
+    If WhereStr <> "" Then
+        Query = Query & " WHERE " & WhereStr
+    End If
+End Sub
 
-    query = "SELECT * FROM " & pTable & " WHERE id=" & Id
-    
-    rs.Open query, cn, adOpenStatic, adLockOptimistic
+Private Sub AddOrderBy()
+    If OrderByStr <> "" Then
+        Query = Query & " ORDER BY " & OrderByStr
+    End If
+End Sub
 
-    Set Row = New Scripting.Dictionary
+Private Sub AddGroupBy()
+    If GroupByStr <> "" Then
+        Query = Query & " GROUP BY " & GroupByStr
+    End If
+End Sub
 
-    For c = 0 To rs.Fields.Count - 1
-        Row(rs.Fields(c).Name) = rs.Fields(c)
-    Next c
-    
-    Set GetWhereId = Row
+Private Sub AddHaving()
+    If HavingStr <> "" Then
+        Query = Query & " HAVING " & HavingStr
+    End If
+End Sub
+
+Public Function OrderBy(ParamArray Fields() As Variant) As Database
+    Dim Field As Variant
+
+    For Each Field In Fields
+        OrderByStr = IIf(OrderByStr = "", Field, OrderByStr & ", " & Field)
+    Next Field
+
+    Set OrderBy = Me
 End Function
 
-Private Sub GetData()
-    Dim c As Integer
+Public Function GroupBy(ParamArray Fields() As Variant) As Database
+    Dim Field As Variant
 
-    rs.Open query, cn, adOpenStatic, adLockOptimistic
+    For Each Field In Fields
+        GroupByStr = IIf(GroupByStr = "", Field, GroupByStr & ", " & Field)
+    Next Field
+
+    Set GroupBy = Me
+End Function
+
+Public Function Having(Condition As String) As Database
+    HavingStr = Condition
+
+    Set Having = Me
+End Function
+
+Private Function GetData() As Collection
+    Dim column As Long
+    Dim rs As ADODB.Recordset
+    Dim Rows As New Collection
+    Dim Row As Scripting.Dictionary
+
+    Set rs = Recordset
 
     Do While Not rs.EOF
         Set Row = New Scripting.Dictionary
 
-        For c = 0 To rs.Fields.Count - 1
-            Row(rs.Fields(c).Name) = rs.Fields(c)
-        Next c
-        
+        For column = 0 To rs.Fields.Count - 1
+            Row(rs.Fields(column).Name) = rs.Fields(column)
+        Next column
+
         Rows.Add Row
-        
+
         rs.MoveNext
     Loop
+
+    Set GetData = Rows
+End Function
+
+Private Function GetFields() As String
+    If FieldsStr = "" Then
+        GetFields = "*"
+    Else
+        GetFields = FieldsStr
+    End If
+End Function
+
+Public Function Table(Name As String, Optional Execute As Boolean = True) As Database
+    TableName = Name
+    ExecuteQuery = Execute
+    Set Table = Me
+End Function
+
+Public Sub Insert(Data As Scripting.Dictionary)
+    Dim Key As Variant
+    Dim Fields As String
+    Dim Values As String
+    Dim Value As Variant
+
+    For Each Key In Data.Keys
+        Fields = IIf(Fields = "", Key, Fields & ", " & Key) ' field1, field2, ...
+        Value = FormatValue(Data(Key))
+        Values = IIf(Values = "", Value, Values & ", " & Value) ' value1, value2, ...
+    Next Key
+
+    Query = "INSERT INTO " & TableName & " (" & Fields & ") VALUES (" & Values & ")"
+
+    ConnectionExecute
 End Sub
 
 Sub Update(Data As Scripting.Dictionary, Condition As String)
-    Dim k As Variant
+    Dim Key As Variant
     Dim FieldsValues As String
+    Dim FieldValue As String
 
-    For Each k In Data.Keys
-        FieldsValues = FieldsValues & ", " & k & " = " & FormatValue(Data(k))
-    Next k
-    
+    For Each Key In Data.Keys
+        FieldValue = Key & " = " & FormatValue(Data(Key)) ' field_name = value
+        FieldsValues = IIf(FieldsValues = "", FieldValue, FieldsValues & ", " & FieldValue)
+    Next Key
+
     FieldsValues = FieldsValues & ", updated_at = NOW()"
-    FieldsValues = Right(FieldsValues, Len(FieldsValues) - 2)
 
-    query = "UPDATE " & pTable & " SET " & FieldsValues & " WHERE " & Condition
+    Query = "UPDATE " & TableName & " SET " & FieldsValues & " WHERE " & Condition
 
-    cn.Execute query
+    If ExecuteQuery Then Connection.Execute Query
 End Sub
 
 Sub Delete(Condition As String)
-    query = "DELETE * FROM " & pTable & " WHERE " & Condition
-    
-    cn.Execute query
+    Query = "DELETE FROM " & TableName & " WHERE " & Condition
+    If ExecuteQuery Then Connection.Execute Query
 End Sub
 
 Sub DeleteId(Id As Integer)
-    query = "DELETE * FROM " & pTable & " WHERE id=" & Id
-    
-    cn.Execute query
+    Query = "DELETE FROM " & TableName & " WHERE id = " & Id
+    If ExecuteQuery Then Connection.Execute Query
 End Sub
 
 Sub Truncate()
-    query = "DELETE * FROM " & pTable
-    
-    cn.Execute query
+    Query = "DELETE * FROM " & TableName
+    If ExecuteQuery Then Connection.Execute Query
 End Sub
 
 Public Function Count() As Long
-    query = "SELECT id FROM " & pTable
-    
-    rs.Open query, cn, adOpenStatic, adLockOptimistic
+    Query = "SELECT id FROM " & TableName
+
+    rs.Open Query, cn, adOpenStatic, adLockOptimistic
 
     Count = rs.RecordCount
 End Function
-
-Public Sub PrintFields()
-    Dim c As Integer
-
-    query = "SELECT * FROM " & pTable
-
-    rs.Open query, cn, adOpenStatic, adLockOptimistic
-
-    For c = 0 To rs.Fields.Count - 1
-        Debug.Print rs.Fields(c).Name
-    Next c
-End Sub
 
 Private Function FormatValue(Value As Variant)
     If IsDate(Value) Then
@@ -159,22 +216,37 @@ Private Function FormatValue(Value As Variant)
     End If
 End Function
 
-Private Sub Class_Initialize()
-    Dim sPath As String
-
-    Set cn = New ADODB.Connection
-    Set rs = New ADODB.Recordset
-
-    sPath = ThisWorkbook.Path & "\db.accdb" ' path access
-
-    cn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & sPath & ";Jet OLEDB:Database Password=;"
+Private Sub Class_Terminate()
+    Debug.Print Query
 End Sub
 
-Private Sub Class_Terminate()
-    Debug.Print query
+Private Function Recordset() As ADODB.Recordset
+    Dim rs As New ADODB.Recordset
 
-    If Not cn Is Nothing Then
-        cn.Close: Set cn = Nothing
+    rs.Open Query, Connection, adOpenStatic, adLockOptimistic
+
+    Set Recordset = rs
+End Function
+
+Private Function Connection() As ADODB.Connection
+    Dim cn As New ADODB.Connection
+    Dim DBFullName As String
+
+    DBFullName = ThisWorkbook.Path & "\db.accdb"
+
+    cn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & DBFullName & ";"
+
+    Set Connection = cn
+End Function
+
+Private Sub ConnectionExecute()
+    If ExecuteQuery Then
+        Connection.Execute Query, , adCmdText
     End If
 End Sub
+
+'Tests
+Public Function GetQuery() As String
+    GetQuery = Query
+End Function
 

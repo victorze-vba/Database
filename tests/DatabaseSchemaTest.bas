@@ -1,7 +1,7 @@
 Attribute VB_Name = "DatabaseSchemaTest"
 Option Explicit
 
-Private Function Schema() As DatabaseSchema
+Function Schema() As DatabaseSchema
     Dim InstanceDatabaseSchema As New DatabaseSchema
     Set Schema = InstanceDatabaseSchema
 End Function
