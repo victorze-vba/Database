@@ -13,7 +13,7 @@ Private SqlString As String
 
 Private TableName As String
 
-Private CreationTable As Boolean
+Private ExecuteSql As Boolean
 
 Public Function FieldString(Name As String, Optional Length As Integer = 255) As DatabaseSchema
     AddSqlString Name & " VARCHAR(" & Length & ") NOT NULL"
@@ -63,9 +63,9 @@ Public Function Unique() As DatabaseSchema
     Set Unique = Me
 End Function
 
-Public Function Create(Name As String) As DatabaseSchema
+Public Function Create(Name As String, Optional Execute As Boolean = True) As DatabaseSchema
     TableName = Name
-    CreationTable = True
+    ExecuteSql = Execute
     Set Create = Me
 End Function
 
@@ -91,32 +91,30 @@ Public Sub Foreing(Field As String, References As String, OnTable As String)
     Connection.Execute SqlAlter, , adCmdText
 End Sub
 
-Public Sub Execute()
-    Connection.Execute SqlStringCreateTable, , adCmdText
-    Debug.Print SqlString
-End Sub
-
 Private Sub Class_Terminate()
-    Debug.Print SqlString
+    Debug.Print SqlStringCreateTable
     
-    If CreationTable Then
+    If ExecuteSql Then
         Connection.Execute SqlStringCreateTable, , adCmdText
     End If
 End Sub
 
 Private Function SqlStringCreateTable() As String
-    AddIdAutoincrement
-    AddCreatedUpdated
-    SqlStringCreateTable = "CREATE Table " & TableName & " (" & SqlString & ")"
+    Dim Sql As String
+
+    Sql = AddIdAutoincrement(SqlString)
+    Sql = AddCreatedUpdated(Sql)
+
+    SqlStringCreateTable = "CREATE TABLE " & TableName & " (" & Sql & ")"
 End Function
 
-Private Sub AddIdAutoincrement()
-    SqlString = "id AUTOINCREMENT PRIMARY KEY, " & SqlString
-End Sub
+Private Function AddIdAutoincrement(SqlStr As String) As String
+    AddIdAutoincrement = "id AUTOINCREMENT PRIMARY KEY, " & SqlStr
+End Function
 
-Private Sub AddCreatedUpdated()
-    SqlString = SqlString & ", created_at DATETIME DEFAULT NOW(), updated_at DATETIME DEFAULT NOW()"
-End Sub
+Private Function AddCreatedUpdated(SqlStr As String) As String
+    AddCreatedUpdated = SqlStr & ", created_at DATETIME DEFAULT NOW(), updated_at DATETIME DEFAULT NOW()"
+End Function
 
 Private Function Connection() As ADODB.Connection
     Dim Con As New ADODB.Connection
@@ -127,4 +125,9 @@ Private Function Connection() As ADODB.Connection
     Con.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & DBFullName & ";"
     
     Set Connection = Con
+End Function
+
+'Tests
+Public Function GetSqlString() As String
+    GetSqlString = SqlString
 End Function
