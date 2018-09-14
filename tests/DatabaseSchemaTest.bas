@@ -10,7 +10,7 @@ Private Sub Test()
     Dim Test As New VBAUnit
     Dim Result As String
     
-    With Test.It("FieldString: only argument | default VARCHAR(255)")
+    With Test.It("FieldString: one argument | default VARCHAR(255)")
         With Schema.Create("table_name", False)
             .FieldString "name"
             Result = .GetSqlString
@@ -19,7 +19,7 @@ Private Sub Test()
         .AssertEquals "name VARCHAR(255) NOT NULL", Result
     End With
     
-    With Test.It("FieldString: field name and length | VARCHAR(length)")
+    With Test.It("FieldString: two arguments | VARCHAR(length)")
         With Schema.Create("table_name", False)
             .FieldString "name", 60
             Result = .GetSqlString
