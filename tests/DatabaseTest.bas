@@ -23,7 +23,7 @@ Private Sub Tests()
             Result = .GetQuery
         End With
     
-        .AssertEquals "INSERT INTO clients (name, bill_date, vip, age) VALUES ('Matias', #2018-09-14 00:00:00#, Falso, 30)", Result
+        .AssertEquals "INSERT INTO clients (name, bill_date, vip, age) VALUES ('Matias', #2018-09-14 00:00:00#, 0, 30)", Result
     End With
     
     With Test.It("GetAll")
@@ -175,5 +175,29 @@ Private Sub Tests()
         End With
 
         .AssertEquals "UPDATE clients SET name = 'foo', age = 13, updated_at = NOW() WHERE id = 1", Result
+    End With
+    
+    With Test.It("Join")
+        With DB.Table("users", False)
+            .Join "contacts", "users.id", "=", "contacts.user_id"
+            .GetAll
+            Result = .GetQuery
+        End With
+        
+        .AssertEquals "SELECT * FROM users INNER JOIN contacts ON users.id = contacts.user_id", Result
+    End With
+    
+    With Test.It("Join nested")
+        With DB.Table("customers", False)
+            .SelectFields "name", "ship_date", "order_qty", "description", "price"
+            .Join "customer_orders", "customers.id", "=", "customer_orders.customer_id"
+            .Join "products", "customer_orders.product_id", "=", "products.id"
+            .OrderBy("price").GetAll
+            Result = .GetQuery
+        End With
+        
+        .AssertEquals "SELECT name, ship_date, order_qty, description, price " & _
+                      "FROM (customers INNER JOIN customer_orders ON customers.id = customer_orders.customer_id) " & _
+                      "INNER JOIN products ON customer_orders.product_id = products.id ORDER BY price", Result
     End With
 End Sub

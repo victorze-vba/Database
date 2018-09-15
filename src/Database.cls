@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-
+' https://laravel.com/docs/5.7/queries
 Private TableName As String
 
 Private Query As String
@@ -23,6 +23,8 @@ Private OrderByStr As String
 
 Private GroupByStr As String
 
+Private InnerJoinStr As String
+
 Private HavingStr As String
 
 Public Function SelectFields(ParamArray Fields() As Variant) As Database
@@ -31,18 +33,18 @@ Public Function SelectFields(ParamArray Fields() As Variant) As Database
     For Each Field In Fields
         FieldsStr = IIf(FieldsStr = "", Field, FieldsStr & ", " & Field)
     Next Field
-
+  
     Set SelectFields = Me
 End Function
 
 Public Function GetAll() As Collection
-    Query = "SELECT " & GetFields & " FROM " & TableName
-
+    AddSelectStatement
+    AddInnerJoin
     AddWhere
     AddGroupBy
     AddHaving
     AddOrderBy
-
+    
     If ExecuteQuery Then Set GetAll = GetData
 End Function
 
@@ -58,9 +60,17 @@ Public Function Where(ParamArray Chunk() As Variant) As Database
         Case 3:
             WhereStr = Chunk(0) & " " & Chunk(1) & " " & FormatValue(Chunk(2))
     End Select
-
+    
     Set Where = Me
 End Function
+
+Private Sub AddSelectStatement()
+    If InnerJoinStr = "" Then
+        Query = "SELECT " & GetFields & " FROM " & TableName & Query
+    Else
+        Query = "SELECT " & GetFields & " FROM" & Query
+    End If
+End Sub
 
 Private Sub AddWhere()
     If WhereStr <> "" Then
@@ -86,6 +96,12 @@ Private Sub AddHaving()
     End If
 End Sub
 
+Private Sub AddInnerJoin()
+    If InnerJoinStr <> "" Then
+        Query = Query & " " & InnerJoinStr
+    End If
+End Sub
+
 Public Function OrderBy(ParamArray Fields() As Variant) As Database
     Dim Field As Variant
 
@@ -108,30 +124,36 @@ End Function
 
 Public Function Having(Condition As String) As Database
     HavingStr = Condition
-
     Set Having = Me
 End Function
 
+Public Function Join(TableJoin As String, IDTable As String, Equal As String, OtherIDTable As String) As Database
+    Dim JoinStr As String
+    JoinStr = "INNER JOIN " & TableJoin & " ON " & IDTable & " " & Equal & " " & OtherIDTable
+    InnerJoinStr = IIf(InnerJoinStr = "", TableName & " " & JoinStr, "(" & InnerJoinStr & ") " & JoinStr)
+    Set Join = Me
+End Function
+
 Private Function GetData() As Collection
-    Dim column As Long
+    Dim Column As Long
     Dim rs As ADODB.Recordset
     Dim Rows As New Collection
     Dim Row As Scripting.Dictionary
-
+    
     Set rs = Recordset
-
+    
     Do While Not rs.EOF
         Set Row = New Scripting.Dictionary
 
-        For column = 0 To rs.Fields.Count - 1
-            Row(rs.Fields(column).Name) = rs.Fields(column)
-        Next column
-
+        For Column = 0 To rs.Fields.Count - 1
+            Row(rs.Fields(Column).Name) = rs.Fields(Column)
+        Next Column
+        
         Rows.Add Row
-
+        
         rs.MoveNext
     Loop
-
+    
     Set GetData = Rows
 End Function
 
@@ -150,57 +172,52 @@ Public Function Table(Name As String, Optional Execute As Boolean = True) As Dat
 End Function
 
 Public Sub Insert(Data As Scripting.Dictionary)
-    Dim Key As Variant
+    Dim key As Variant
     Dim Fields As String
     Dim Values As String
     Dim Value As Variant
 
-    For Each Key In Data.Keys
-        Fields = IIf(Fields = "", Key, Fields & ", " & Key) ' field1, field2, ...
-        Value = FormatValue(Data(Key))
+    For Each key In Data.Keys
+        Fields = IIf(Fields = "", key, Fields & ", " & key) ' field1, field2, ...
+        Value = FormatValue(Data(key))
         Values = IIf(Values = "", Value, Values & ", " & Value) ' value1, value2, ...
-    Next Key
+    Next key
 
     Query = "INSERT INTO " & TableName & " (" & Fields & ") VALUES (" & Values & ")"
-
+    
     ConnectionExecute
 End Sub
 
 Sub Update(Data As Scripting.Dictionary, Condition As String)
-    Dim Key As Variant
+    Dim key As Variant
     Dim FieldsValues As String
     Dim FieldValue As String
 
-    For Each Key In Data.Keys
-        FieldValue = Key & " = " & FormatValue(Data(Key)) ' field_name = value
+    For Each key In Data.Keys
+        FieldValue = key & " = " & FormatValue(Data(key)) ' field_name = value
         FieldsValues = IIf(FieldsValues = "", FieldValue, FieldsValues & ", " & FieldValue)
-    Next Key
+    Next key
 
     FieldsValues = FieldsValues & ", updated_at = NOW()"
 
     Query = "UPDATE " & TableName & " SET " & FieldsValues & " WHERE " & Condition
 
-    If ExecuteQuery Then Connection.Execute Query
+    ConnectionExecute
 End Sub
 
 Sub Delete(Condition As String)
     Query = "DELETE FROM " & TableName & " WHERE " & Condition
-    If ExecuteQuery Then Connection.Execute Query
+    ConnectionExecute
 End Sub
 
 Sub DeleteId(Id As Integer)
     Query = "DELETE FROM " & TableName & " WHERE id = " & Id
-    If ExecuteQuery Then Connection.Execute Query
-End Sub
-
-Sub Truncate()
-    Query = "DELETE * FROM " & TableName
-    If ExecuteQuery Then Connection.Execute Query
+    ConnectionExecute
 End Sub
 
 Public Function Count() As Long
     Query = "SELECT id FROM " & TableName
-
+    
     rs.Open Query, cn, adOpenStatic, adLockOptimistic
 
     Count = rs.RecordCount
@@ -211,18 +228,17 @@ Private Function FormatValue(Value As Variant)
         FormatValue = "#" & Format(Value, "yyyy-mm-dd hh:nn:ss") & "#"
     ElseIf WorksheetFunction.IsText(Value) Then
         FormatValue = "'" & Value & "'"
+    ElseIf VarType(Value) = vbBoolean Then
+        FormatValue = IIf(Value, 1, 0)
     ElseIf IsNumeric(Value) Then
         FormatValue = Value
     End If
 End Function
 
-Private Sub Class_Terminate()
-    Debug.Print Query
-End Sub
-
 Private Function Recordset() As ADODB.Recordset
     Dim rs As New ADODB.Recordset
-
+    
+    Debug.Print Query
     rs.Open Query, Connection, adOpenStatic, adLockOptimistic
 
     Set Recordset = rs
@@ -231,16 +247,17 @@ End Function
 Private Function Connection() As ADODB.Connection
     Dim cn As New ADODB.Connection
     Dim DBFullName As String
-
+    
     DBFullName = ThisWorkbook.Path & "\db.accdb"
-
+    
     cn.Open "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=" & DBFullName & ";"
-
+    
     Set Connection = cn
 End Function
 
 Private Sub ConnectionExecute()
     If ExecuteQuery Then
+        Debug.Print Query
         Connection.Execute Query, , adCmdText
     End If
 End Sub
@@ -249,4 +266,3 @@ End Sub
 Public Function GetQuery() As String
     GetQuery = Query
 End Function
-

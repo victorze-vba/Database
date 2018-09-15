@@ -9,7 +9,7 @@ Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
 
-Private SqlString As String
+Private Query As String
 
 Private TableName As String
 
@@ -41,25 +41,25 @@ Public Function FieldDate(Name As String) As DatabaseSchema
 End Function
 
 Private Sub AddSqlString(Value As String)
-    If SqlString = "" Then
-       SqlString = Value
+    If Query = "" Then
+       Query = Value
     Else
-       SqlString = SqlString & ", " & Value
+       Query = Query & ", " & Value
     End If
 End Sub
 
 Public Function Nullable() As DatabaseSchema
-    SqlString = Left(SqlString, Len(SqlString) - 9)
+    Query = Left(Query, Len(Query) - 9)
     Set Nullable = Me
 End Function
 
 Public Function Default(valor) As DatabaseSchema
-    SqlString = SqlString & " DEFAULT " & valor
+    Query = Query & " DEFAULT " & valor
     Set Default = Me
 End Function
 
 Public Function Unique() As DatabaseSchema
-    SqlString = SqlString & " UNIQUE"
+    Query = Query & " UNIQUE"
     Set Unique = Me
 End Function
 
@@ -79,22 +79,19 @@ Public Function Table(Name As String) As DatabaseSchema
 End Function
 
 Public Sub Foreing(Field As String, References As String, OnTable As String)
-    Dim SqlAlter As String
-    
-    SqlAlter = "ALTER TABLE " & TableName & _
-                " ALTER COLUMN " & Field & " INTEGER" & _
-                " CONSTRAINT FK_" & Field & _
-                " REFERENCES " & OnTable & " (" & References & ")" & _
+    Query = "ALTER TABLE " & TableName & _
+                " ADD CONSTRAINT FK_" & TableName & "_" & Field & "_" & OnTable & _
+                " FOREIGN KEY (" & Field & ") REFERENCES " & _
+                    OnTable & " (" & References & ")" & _
                 " ON DELETE CASCADE"
-                
-    Debug.Print SqlAlter
-    Connection.Execute SqlAlter, , adCmdText
+    
+    Debug.Print Query
+    Connection.Execute Query, , adCmdText
 End Sub
 
 Private Sub Class_Terminate()
-    Debug.Print SqlStringCreateTable
-    
     If ExecuteSql Then
+        Debug.Print SqlStringCreateTable
         Connection.Execute SqlStringCreateTable, , adCmdText
     End If
 End Sub
@@ -102,7 +99,7 @@ End Sub
 Private Function SqlStringCreateTable() As String
     Dim Sql As String
 
-    Sql = AddIdAutoincrement(SqlString)
+    Sql = AddIdAutoincrement(Query)
     Sql = AddCreatedUpdated(Sql)
 
     SqlStringCreateTable = "CREATE TABLE " & TableName & " (" & Sql & ")"
@@ -129,5 +126,5 @@ End Function
 
 'Tests
 Public Function GetSqlString() As String
-    GetSqlString = SqlString
+    GetSqlString = Query
 End Function
