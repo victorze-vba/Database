@@ -1,6 +1,11 @@
 Attribute VB_Name = "DatabaseSchemaExample"
 Option Explicit
 
+Private Function Schema() As DatabaseSchema
+    Dim InstanceDatabaseSchema As New DatabaseSchema
+    Set Schema = InstanceDatabaseSchema
+End Function
+
 Sub CreateTables()
     With Schema.Create("customers")
         .FieldString "name", 60

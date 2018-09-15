@@ -1,6 +1,11 @@
 Attribute VB_Name = "DatabaseExample"
 Option Explicit
 
+Private Function DB() As Database
+    Dim InstanceDatabase As New Database
+    Set DB = InstanceDatabase
+End Function
+
 Sub InsertCustomersTable()
     Dim Row1 As New Scripting.Dictionary
     Dim Row2 As New Scripting.Dictionary
@@ -148,21 +153,7 @@ Sub InsertCustomerOrdersTable()
     DB.Table("customer_orders").Insert Row5
 End Sub
 
-Sub InsertDataxx()
-    Dim Data As Scripting.Dictionary
-    Dim i As Integer
-    
-    For i = 1 To 100
-        Set Data = New Scripting.Dictionary
-        
-        Data("client") = "client" & i
-        Data("price") = i * 100
-        
-        DB.Table("sales").Insert Data
-    Next i
-End Sub
-
-Sub GetAllProducts()
+Sub GetAllData()
     Dim Products As Collection
 
     Set Products = DB.Table("products").SelectFields("description", "price").GetAll
@@ -170,7 +161,15 @@ Sub GetAllProducts()
     PrintCollection Products
 End Sub
 
-Sub JoinCustomerAndCustomerOrders()
+Sub WhereAndOrderBy()
+    Dim Products As Collection
+
+    Set Products = DB.Table("products").Where("price", ">", 10).OrderBy("price DESC").GetAll
+    
+    PrintCollection Products
+End Sub
+
+Sub InnerJoinCustomerAndCustomerOrders()
     Dim Orders As Collection
     
     With DB.Table("customers")
@@ -223,4 +222,3 @@ Sub PrintCollection(DataCollection As Collection)
         Debug.Print Row
     Next DataDic
 End Sub
-
