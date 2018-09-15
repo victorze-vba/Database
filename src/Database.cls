@@ -64,44 +64,6 @@ Public Function Where(ParamArray Chunk() As Variant) As Database
     Set Where = Me
 End Function
 
-Private Sub AddSelectStatement()
-    If InnerJoinStr = "" Then
-        Query = "SELECT " & GetFields & " FROM " & TableName & Query
-    Else
-        Query = "SELECT " & GetFields & " FROM" & Query
-    End If
-End Sub
-
-Private Sub AddWhere()
-    If WhereStr <> "" Then
-        Query = Query & " WHERE " & WhereStr
-    End If
-End Sub
-
-Private Sub AddOrderBy()
-    If OrderByStr <> "" Then
-        Query = Query & " ORDER BY " & OrderByStr
-    End If
-End Sub
-
-Private Sub AddGroupBy()
-    If GroupByStr <> "" Then
-        Query = Query & " GROUP BY " & GroupByStr
-    End If
-End Sub
-
-Private Sub AddHaving()
-    If HavingStr <> "" Then
-        Query = Query & " HAVING " & HavingStr
-    End If
-End Sub
-
-Private Sub AddInnerJoin()
-    If InnerJoinStr <> "" Then
-        Query = Query & " " & InnerJoinStr
-    End If
-End Sub
-
 Public Function OrderBy(ParamArray Fields() As Variant) As Database
     Dim Field As Variant
 
@@ -156,6 +118,44 @@ Private Function GetData() As Collection
     
     Set GetData = Rows
 End Function
+
+Private Sub AddSelectStatement()
+    If InnerJoinStr = "" Then
+        Query = "SELECT " & GetFields & " FROM " & TableName & Query
+    Else
+        Query = "SELECT " & GetFields & " FROM" & Query
+    End If
+End Sub
+
+Private Sub AddWhere()
+    If WhereStr <> "" Then
+        Query = Query & " WHERE " & WhereStr
+    End If
+End Sub
+
+Private Sub AddOrderBy()
+    If OrderByStr <> "" Then
+        Query = Query & " ORDER BY " & OrderByStr
+    End If
+End Sub
+
+Private Sub AddGroupBy()
+    If GroupByStr <> "" Then
+        Query = Query & " GROUP BY " & GroupByStr
+    End If
+End Sub
+
+Private Sub AddHaving()
+    If HavingStr <> "" Then
+        Query = Query & " HAVING " & HavingStr
+    End If
+End Sub
+
+Private Sub AddInnerJoin()
+    If InnerJoinStr <> "" Then
+        Query = Query & " " & InnerJoinStr
+    End If
+End Sub
 
 Private Function GetFields() As String
     If FieldsStr = "" Then
