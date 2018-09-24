@@ -54,7 +54,7 @@ Sub WhereAndOrderBy()
     Set Products = DB.Table("products").Where("price", ">", 10).OrderBy("price DESC").GetAll
     ' query:
     ' SELECT * FROM products WHERE price > 10 ORDER BY price DESC
-End SuInnerJoinCustomerAndCustomerb
+End sub
 
 Sub InnerJoinCustomerAndCustomerOrders()
     Dim Orders As Collection
