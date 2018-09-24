@@ -43,7 +43,7 @@ sub InsertData
     Row("description") = "Copper"
     Row("price") = 7.51
 
-    DB.Table("products", False).Insert Row
+    DB.Table("products").Insert Row
     ' query:
     ' INSERT INTO products (description, price) VALUES ('Copper', 7.51)
 end sub
