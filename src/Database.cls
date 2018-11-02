@@ -8,7 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
 Option Explicit
-' https://laravel.com/docs/5.7/queries
+
 Private TableName As String
 
 Private Query As String
@@ -48,17 +48,17 @@ Public Function GetAll() As Collection
     If ExecuteQuery Then Set GetAll = GetData
 End Function
 
-Public Function Where(ParamArray Chunk() As Variant) As Database
+Public Function Where(ParamArray chunk() As Variant) As Database
     Dim NumberArgs As Integer
-    NumberArgs = UBound(Chunk) + 1
+    NumberArgs = UBound(chunk) + 1
 
     Select Case NumberArgs
         Case 1:
-            WhereStr = Chunk(0)
+            WhereStr = chunk(0)
         Case 2:
-            WhereStr = Chunk(0) & " = " & FormatValue(Chunk(1))
+            WhereStr = chunk(0) & " = " & FormatValue(chunk(1))
         Case 3:
-            WhereStr = Chunk(0) & " " & Chunk(1) & " " & FormatValue(Chunk(2))
+            WhereStr = chunk(0) & " " & chunk(1) & " " & FormatValue(chunk(2))
     End Select
     
     Set Where = Me
@@ -108,7 +108,7 @@ Private Function GetData() As Collection
         Set Row = New Scripting.Dictionary
 
         For Column = 0 To rs.Fields.Count - 1
-            Row(rs.Fields(Column).Name) = rs.Fields(Column)
+            Row(rs.Fields(Column).Name) = IIf(IsNull(rs.Fields(Column)), Empty, rs.Fields(Column))
         Next Column
         
         Rows.Add Row
@@ -171,7 +171,7 @@ Public Function Table(Name As String, Optional Execute As Boolean = True) As Dat
     Set Table = Me
 End Function
 
-Public Sub Insert(Data As Scripting.Dictionary)
+Public Function Insert(Data As Scripting.Dictionary) As Long
     Dim key As Variant
     Dim Fields As String
     Dim Values As String
@@ -186,7 +186,15 @@ Public Sub Insert(Data As Scripting.Dictionary)
     Query = "INSERT INTO " & TableName & " (" & Fields & ") VALUES (" & Values & ")"
     
     ConnectionExecute
-End Sub
+    Insert = GetLastId
+End Function
+
+Private Function GetLastId() As Long
+    Dim rs As ADODB.Recordset
+    Query = "SELECT MAX(id) as max_id FROM " & TableName
+    Set rs = Recordset
+    GetLastId = rs.Fields(0)
+End Function
 
 Sub Update(Data As Scripting.Dictionary, Condition As String)
     Dim key As Variant
@@ -210,21 +218,22 @@ Sub Delete(Condition As String)
     ConnectionExecute
 End Sub
 
-Sub DeleteId(Id As Integer)
-    Query = "DELETE FROM " & TableName & " WHERE id = " & Id
+Sub DeleteId(id As Integer)
+    Query = "DELETE FROM " & TableName & " WHERE id = " & id
     ConnectionExecute
 End Sub
 
 Public Function Count() As Long
-    Query = "SELECT id FROM " & TableName
-    
-    rs.Open Query, cn, adOpenStatic, adLockOptimistic
-
-    Count = rs.RecordCount
+    Dim rs As ADODB.Recordset
+    Query = "SELECT COUNT(*) as rows_count FROM " & TableName
+    Set rs = Recordset
+    Count = rs.Fields(0)
 End Function
 
-Private Function FormatValue(Value As Variant)
-    If IsDate(Value) Then
+Private Function FormatValue(Value As Variant) As Variant
+    If IsNull(Value) Then
+        FormatValue = "Null"
+    ElseIf IsDate(Value) Then
         FormatValue = "#" & Format(Value, "yyyy-mm-dd hh:nn:ss") & "#"
     ElseIf WorksheetFunction.IsText(Value) Then
         FormatValue = "'" & Value & "'"
