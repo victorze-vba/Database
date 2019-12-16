@@ -2,6 +2,8 @@
 
 Simplifies database management.
 
+[Download file](https://github.com/victorze-vba/Database/raw/master/Examples.xlsm)
+
 ## Create tables
 
 Add the following references to the project (Add using *Tools->References* from the VB menu):
