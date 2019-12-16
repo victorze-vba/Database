@@ -1,5 +1,9 @@
 ## Create tables
 
+By default the Access file must be located in the same folder as the Excel
+file and must be called db.accdb
+![location](https://raw.githubusercontent.com/vba-dev/database/master/location.png)
+
 ```vb
 Sub CreateTables()
     With Schema.Create("customers")
