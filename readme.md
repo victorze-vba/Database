@@ -1,4 +1,12 @@
+# Database
+
+Simplifies database management.
+
 ## Create tables
+
+Add the following references to the project (Add using *Tools->References* from the VB menu):
+- Microsoft ActiveX Data Objects 2.8 Library.
+- Microsoft Scripting Runtime.
 
 By default the Access file must be located in the same folder as the Excel
 file and must be called db.accdb
