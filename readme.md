@@ -5,6 +5,7 @@ file and must be called db.accdb
 ![location](https://raw.githubusercontent.com/vba-dev/database/master/location.png)
 
 ```vb
+' The db.accdb file must be closed
 Sub CreateTables()
     With Schema.Create("customers")
         .FieldString "name", 60
@@ -38,7 +39,7 @@ End Sub
 ![imagen](https://raw.githubusercontent.com/vba-dev/database/master/relations.png)
 
 
-## Query Builder
+## Querys
 
 ```vb
 sub InsertData
